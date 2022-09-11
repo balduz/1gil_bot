@@ -1,8 +1,12 @@
+require('dotenv').config();
+
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
 const wait = require('node:timers/promises').setTimeout;
 
 const DEFAULT_PARTY_SIZE = 8;
+
+console.log('paths; ' + process.env.BACKEND_URL);
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
@@ -63,7 +67,7 @@ module.exports = {
     const collector = interaction.channel.createMessageComponentCollector({
       filter,
       max: size,
-      time: 1000 * 5
+      time: 1000 * 3600 * 24
     });
 
     let isUpdating = false;
@@ -99,7 +103,8 @@ module.exports = {
         date: date,
         participants: collected.map(i => i.guild.members.cache.get(i.user.id).displayName)
       };
-      const res = await fetch('http://localhost:8080/api/event', {
+      console.log(process.env.BACKEND_URL);
+      const res = await fetch(process.env.BACKEND_URL + '/api/event', {
         method: 'post',
         body: JSON.stringify(newEvent),
         headers: { "Content-Type": "application/json" }
