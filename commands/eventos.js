@@ -47,6 +47,8 @@ module.exports = {
 }
 
 const getNextEvent = async (interaction) => {
+  await interaction.deferReply({ ephemeral: true });
+
   const res = await fetch(process.env.BACKEND_URL + '/api/event/next');
   const eventData = await res.json();
 
