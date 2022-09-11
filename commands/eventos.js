@@ -64,7 +64,7 @@ const getNextEvent = async (interaction) => {
     );
 
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [embed] });
 }
 
 const createNewEvent = async (interaction) => {
