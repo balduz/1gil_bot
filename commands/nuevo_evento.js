@@ -6,14 +6,12 @@ const wait = require('node:timers/promises').setTimeout;
 
 const DEFAULT_PARTY_SIZE = 8;
 
-console.log('paths; ' + process.env.BACKEND_URL);
-
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 module.exports = {
-  data: new SlashCommandBuilder().setName('button').setDescription('Try out a button')
+  data: new SlashCommandBuilder().setName('nuevo_evento').setDescription('Crear un nuevo evento en 1 Gil')
     .addStringOption(option => option.setName('titulo').setRequired(true).setDescription('Título del evento'))
     .addStringOption(option => option.setName('descripcion').setRequired(true).setDescription('Descripción del evento'))
     .addIntegerOption(option => option.setName('dia').setRequired(true).setMinValue(1).setMaxValue(31).setDescription('Día, entre 1 y 31'))
