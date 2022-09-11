@@ -47,7 +47,7 @@ module.exports = {
 }
 
 const getNextEvent = async (interaction) => {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
 
   const res = await fetch(process.env.BACKEND_URL + '/api/event/next');
   const eventData = await res.json();
@@ -64,7 +64,7 @@ const getNextEvent = async (interaction) => {
     );
 
 
-  await interaction.editReply({ embeds: [embed], ephemeral: false });
+  await interaction.editReply({ embeds: [embed] });
 }
 
 const createNewEvent = async (interaction) => {
