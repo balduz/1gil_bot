@@ -78,6 +78,7 @@ const createNewEvent = async (interaction) => {
   const size = options.getInteger(SIZE_OPTION) || DEFAULT_PARTY_SIZE;
 
   const author = interaction.guild.members.cache.get(interaction.user.id).displayName;
+  const authorAvatar = interaction.user.avatarURL();
   const date = new Date(new Date().getFullYear(), month - 1, day, hour, mins);
 
   const row = new ActionRowBuilder()
@@ -91,20 +92,16 @@ const createNewEvent = async (interaction) => {
         .setLabel('No')
         .setStyle(ButtonStyle.Danger));
 
-  const embed = new EmbedBuilder()
-    .setColor(0x0099FF)
-    .setTitle(title)
-    .setDescription(desc)
-    .addFields(
-      { name: 'Fecha', value: capitalizeFirstLetter(date.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })) },
-      { name: 'Hora', value: date.toLocaleTimeString('es-ES', { hour: 'numeric', minute: 'numeric' }) },
-      { name: `Participantes (0/${size})`, value: '-' }
-    )
-    .setFooter({ text: `Creado por ${author}`, iconURL: interaction.user.avatarURL() })
-    .setTimestamp();
+  const embed = buildNewEventEmbed(title, desc, date, author, size, authorAvatar);
+
+  await interaction.reply({ components: [row], embeds: [embed] });
+  const client = interaction.client;
+  const channelId = interaction.channelId;
+  const msg = await interaction.fetchReply();
+  const msgId = msg.id;
 
   const ids = new Set();
-
+  const participants = [];
   const filter = (msg) => {
     return !ids.has(msg.user.id);
   }
@@ -115,31 +112,34 @@ const createNewEvent = async (interaction) => {
     time: 1000 * 3600 * 24
   });
 
-  let isUpdating = false;
-
   collector.on('collect', async i => {
-    isUpdating = true;
-    ids.add(i.user.id)
+    if (i.customId === 'no') {
+      collector.stop();
+      return;
+    }
+    const userName = i.guild.members.cache.get(i.user.id).displayName;
+    participants.push(userName);
+    ids.add(i.user.id);
     i.message.embeds[0].fields.map(field => {
       if (!field.name.startsWith('Participantes')) {
         return field;
       }
-      const userName = i.guild.members.cache.get(i.user.id).displayName;
       field.value = field.value === '-' ? userName : field.value + "\n" + userName;
       field.name = `Participantes (${ids.size}/${size})`;
     })
     await i.update({ embeds: i.message.embeds });
-    isUpdating = false;
   });
 
   collector.on('end', async collected => {
-    // Prevent reply updates if collect is still running.
-    while (isUpdating) await wait(500);
+    const channel = await client.channels.fetch(channelId);
+    await channel.messages.delete(msgId);
 
-    interaction.editReply({
-      components: [],
-    });
-    if (collected.size < size) return;
+    if (participants.length < size) {
+      await channel.send({ embeds: [buildNewEventEmbed(`Cancelado: ~~${title}~~`, desc, date, author, size, authorAvatar, participants)] });
+      return;
+    }
+
+    await channel.send({ embeds: [buildNewEventEmbed(title, desc, date, author, size, authorAvatar, participants)] });
 
     const newEvent = {
       name: title,
@@ -153,6 +153,18 @@ const createNewEvent = async (interaction) => {
       headers: { "Content-Type": "application/json" }
     })
   });
+}
 
-  await interaction.reply({ components: [row], embeds: [embed] });
+const buildNewEventEmbed = (title, desc, date, author, size, avatar, participants = []) => {
+  return new EmbedBuilder()
+    .setColor(0x0099FF)
+    .setTitle(title)
+    .setDescription(desc)
+    .addFields(
+      { name: 'Fecha', value: capitalizeFirstLetter(date.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })) },
+      { name: 'Hora', value: date.toLocaleTimeString('es-ES', { hour: 'numeric', minute: 'numeric' }) },
+      { name: `Participantes (${participants.length}/${size})`, value: `${participants.length > 0 ? participants.join('\n') : '-'}` }
+    )
+    .setFooter({ text: `Creado por ${author}`, iconURL: avatar })
+    .setTimestamp();
 }
