@@ -33,12 +33,16 @@ client.on('ready', () => {
 
 client.on('interactionCreate', async (interaction) => {
   if (interaction.isChatInputCommand()) {
-    const command = interaction.client.commands.get(interaction.commandName)
-
+    const command = interaction.client.commands.get(interaction.commandName);
     if (!command) return
 
     try {
-      await command.execute(interaction)
+      const subcommand = interaction.options.getSubcommand();
+      if (subcommand !== '') {
+        command.subcommands[subcommand](interaction);
+      } else {
+        await command.execute(interaction);
+      }
     } catch (error) {
       console.error(error)
       await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true })
