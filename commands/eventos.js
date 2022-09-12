@@ -106,7 +106,7 @@ const createNewEvent = async (interaction) => {
     return !ids.has(msg.user.id);
   }
 
-  const collector = interaction.channel.createMessageComponentCollector({
+  const collector = msg.createMessageComponentCollector({
     filter,
     max: size,
     time: 1000 * 3600 * 24
