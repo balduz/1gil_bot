@@ -57,7 +57,7 @@ const getNextEvent = async (interaction) => {
     .setTitle(eventData.name)
     .setDescription(eventData.description)
     .addFields(
-      { name: 'Fecha', value: capitalizeFirstLetter(date.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' })) },
+      { name: 'Fecha', value: capitalizeFirstLetter(date.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })) },
       { name: 'Hora', value: date.toLocaleTimeString('es-ES', { hour: 'numeric', minute: 'numeric', timeZone: 'Europe/Madrid' }) },
       { name: `Participantes`, value: eventData.participants.join('\n') }
     );
