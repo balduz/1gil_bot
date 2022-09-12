@@ -2,7 +2,6 @@ require('dotenv').config();
 
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
-const wait = require('node:timers/promises').setTimeout;
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
