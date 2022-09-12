@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('console-stamp')(console);
 
 const fs = require('node:fs')
 const path = require('node:path')
@@ -39,7 +40,7 @@ client.on('interactionCreate', async (interaction) => {
     try {
       const subcommand = interaction.options.getSubcommand();
       if (subcommand !== '') {
-        command.subcommands[subcommand](interaction);
+        await command.subcommands[subcommand](interaction);
       } else {
         await command.execute(interaction);
       }
