@@ -31,7 +31,7 @@ handleCommands(client)
 client.on('ready', () => {
   console.log('The bot is ready')
 
-  client.user.setActivity('Eusko Ikaskuntza', { type: ActivityType.Custom });
+  client.user.setActivity('Eusko Ikaskuntza', { type: ActivityType.Playing });
 })
 
 client.on('interactionCreate', async (interaction) => {
