@@ -4,7 +4,7 @@ require('console-stamp')(console);
 const fs = require('node:fs')
 const path = require('node:path')
 
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, ActivityType } = require('discord.js');
 
 const client = new Client({
   intents: [
@@ -30,6 +30,8 @@ handleCommands(client)
 
 client.on('ready', () => {
   console.log('The bot is ready')
+
+  client.user.setActivity('Eusko Ikaskuntza', { type: ActivityType.Custom });
 })
 
 client.on('interactionCreate', async (interaction) => {
