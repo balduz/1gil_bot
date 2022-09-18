@@ -111,7 +111,8 @@ const createNewEvent = async (interaction) => {
     time: 1000 * 3600 * 24
   });
 
-  collector.on('collect', async i => {
+  let updatePromise = Promise.resolve();
+  collector.on('collect', i => {
     if (i.customId === 'no') {
       collector.stop();
       return;
@@ -126,12 +127,12 @@ const createNewEvent = async (interaction) => {
       field.value = field.value === '-' ? userName : field.value + "\n" + userName;
       field.name = `Participantes (${ids.size}/${size})`;
     })
-    await i.update({ embeds: i.message.embeds });
+    updatePromise = updatePromise.then(() => i.update({ embeds: i.message.embeds }));
   });
 
   collector.on('end', async collected => {
     const channel = await client.channels.fetch(channelId);
-    await channel.messages.delete(msgId);
+    updatePromise.then(() => channel.messages.delete(msgId));
 
     if (participants.length < size) {
       await channel.send({ embeds: [buildNewEventEmbed(`Cancelado: ~~${title}~~`, desc, date, author, size, authorAvatar, participants)] });
@@ -146,11 +147,22 @@ const createNewEvent = async (interaction) => {
       date: date,
       participants: collected.map(i => i.guild.members.cache.get(i.user.id).displayName)
     };
-    const res = await fetch(process.env.BACKEND_URL + '/api/event', {
-      method: 'post',
-      body: JSON.stringify(newEvent),
-      headers: { "Content-Type": "application/json" }
-    })
+
+    try {
+      const res = await fetch(process.env.BACKEND_URL + '/api/event', {
+        method: 'post',
+        body: JSON.stringify(newEvent),
+        headers: { "Content-Type": "application/json" }
+      });
+      if (res.ok) {
+        console.log(`Event ${title} with size ${participants.length} saved`);
+      } else {
+        console.warn(`Event ${title} failed to save: ${res.text()}`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
   });
 }
 
