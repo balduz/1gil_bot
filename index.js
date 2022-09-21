@@ -32,7 +32,13 @@ client.on('ready', () => {
   console.log('The bot is ready')
 
   client.user.setActivity('Eusko Ikaskuntza', { type: ActivityType.Playing });
-})
+
+  // sendScheduledMessages = () => {
+
+  // };
+
+  // setTimeout(sendScheduledMessages, 30 * 60 * 1000);
+});
 
 client.on('interactionCreate', async (interaction) => {
   if (interaction.isChatInputCommand()) {

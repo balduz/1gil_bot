@@ -14,6 +14,7 @@ const MONTH_OPTION = 'mes';
 const HOUR_OPTION = 'hora';
 const MINS_OPTION = 'minutos';
 const SIZE_OPTION = 'tamaño';
+const EVENTS_SIZE_OPTION = 'cuántos';
 
 const DEFAULT_PARTY_SIZE = 8;
 
@@ -33,13 +34,14 @@ module.exports = {
         .addIntegerOption(option => option.setName(SIZE_OPTION).setMinValue(1).setDescription('Hasta cuánta gente puede apuntarse'))
     )
     .addSubcommand(subcommand =>
-      subcommand.setName('siguiente')
-        .setDescription('Muestra cuál es el siguiente evento')),
+      subcommand.setName('siguientes')
+        .setDescription('Muestra cuáles son los siguientes eventos')
+        .addIntegerOption(option => option.setName(EVENTS_SIZE_OPTION).setMinValue(1).setDescription('Cuántos eventos mostrar, por defecto 1'))),
   subcommands: {
     'nuevo': async (interaction) => {
       await createNewEvent(interaction);
     },
-    'siguiente': async (interaction) => {
+    'siguientes': async (interaction) => {
       await getNextEvent(interaction);
     },
   }
@@ -47,23 +49,28 @@ module.exports = {
 
 const getNextEvent = async (interaction) => {
   await interaction.deferReply();
+  const size = options.getInteger(EVENTS_SIZE_OPTION) || 1;
 
-  const res = await fetch(process.env.BACKEND_URL + '/api/event/next');
-  const eventData = await res.json();
+  try {
+    const res = await fetch(`${process.env.BACKEND_URL}/api/events?size=${size}`);
+    const eventsData = await res.json();
 
-  const date = new Date(eventData.date);
-  const embed = new EmbedBuilder()
-    .setColor(0x0099FF)
-    .setTitle(eventData.name)
-    .setDescription(eventData.description)
-    .addFields(
-      { name: 'Fecha', value: capitalizeFirstLetter(date.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })) },
-      { name: 'Hora', value: date.toLocaleTimeString('es-ES', { hour: 'numeric', minute: 'numeric' }) },
-      { name: `Participantes`, value: eventData.participants.join('\n') }
-    );
+    console.log(`successfully fetched ${eventsData.length} events`);
 
+    const embeds = eventsData.map((eventData) => new EmbedBuilder()
+      .setColor(0x0099FF)
+      .setTitle(eventData.name)
+      .setDescription(eventData.description)
+      .addFields(
+        { name: 'Fecha', value: capitalizeFirstLetter(new Date(eventData.date).toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })) },
+        { name: 'Hora', value: new Date(eventData.date).toLocaleTimeString('es-ES', { hour: 'numeric', minute: 'numeric' }) },
+        { name: `Participantes`, value: eventData.participants.join('\n') }
+      ));
 
-  await interaction.editReply({ embeds: [embed] });
+    await interaction.editReply({ embeds });
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 const createNewEvent = async (interaction) => {
