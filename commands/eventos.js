@@ -126,9 +126,13 @@ const createNewEvent = async (interaction) => {
       collector.stop();
       return;
     }
+
+    const defer = i.deferUpdate();
+
     const userName = i.guild.members.cache.get(i.user.id).displayName;
     participants.push(userName);
     ids.add(i.user.id);
+
     i.message.embeds[0].fields.map(field => {
       if (!field.name.startsWith('Participantes')) {
         return field;
@@ -136,7 +140,8 @@ const createNewEvent = async (interaction) => {
       field.value = field.value === '-' ? userName : field.value + "\n" + userName;
       field.name = `Participantes (${ids.size}/${size})`;
     })
-    updatePromise = updatePromise.then(() => i.update({ embeds: i.message.embeds }));
+
+    updatePromise = Promise.all(defer, updatePromise).then(() => i.update({ embeds: i.message.embeds }));
   });
 
   collector.on('end', async collected => {
