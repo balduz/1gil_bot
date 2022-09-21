@@ -141,7 +141,7 @@ const createNewEvent = async (interaction) => {
       field.name = `Participantes (${ids.size}/${size})`;
     })
 
-    updatePromise = Promise.all(defer, updatePromise).then(() => i.update({ embeds: i.message.embeds }));
+    updatePromise = Promise.all(defer, updatePromise).then(() => i.editReply({ embeds: i.message.embeds }));
   });
 
   collector.on('end', async collected => {
