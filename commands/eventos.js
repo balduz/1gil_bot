@@ -49,6 +49,8 @@ module.exports = {
 
 const getNextEvent = async (interaction) => {
   await interaction.deferReply();
+
+  const { options } = interaction;
   const size = options.getInteger(EVENTS_SIZE_OPTION) || 1;
 
   try {
