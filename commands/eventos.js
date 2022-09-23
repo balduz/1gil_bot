@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
 
 function capitalizeFirstLetter(string) {
@@ -89,27 +89,22 @@ const createNewEvent = async (interaction) => {
   const authorAvatar = interaction.user.avatarURL();
   const date = new Date(new Date().getFullYear(), month - 1, day, hour, mins);
 
-  const row = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('yes')
-        .setLabel('Yes')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId('no')
-        .setLabel('No')
-        .setStyle(ButtonStyle.Danger));
-
   const embed = buildNewEventEmbed(title, desc, date, author, size, authorAvatar);
 
-  await interaction.reply({ components: [row], embeds: [embed] });
+  const msg = await interaction.reply({ embeds: [embed], fetchReply: true });
+  await msg.react('<:tank:867880962864185345>')
+    .then(() => msg.react('<:healer:867880962955018240>'))
+    .then(() => msg.react('<:dps:867880962929852416>'));
+
+  const msgId = msg.id;
   const client = interaction.client;
   const channelId = interaction.channelId;
-  const msg = await interaction.fetchReply();
-  const msgId = msg.id;
+  const guild = interaction.guild;
 
   const ids = new Set();
-  const participants = [];
+  const dps = [];
+  const tanks = [];
+  const healers = [];
   const filter = (msg) => {
     return !ids.has(msg.user.id);
   }
@@ -121,27 +116,33 @@ const createNewEvent = async (interaction) => {
   });
 
   let updatePromise = Promise.resolve();
-  collector.on('collect', i => {
-    if (i.customId === 'no') {
-      collector.stop();
-      return;
+  collector.on('collect', (reaction, user) => {
+    // Add some reaction to cancel/stop
+    // if (i.customId === 'no') {
+    //   collector.stop();
+    //   return;
+    // }
+
+    const userName = guild.members.cache.get(user.id).displayName;
+    switch (reaction.emoji.name) {
+      case 'dps':
+        dps.push(userName);
+        updateEmbed(reaction, userName, 'DPS', dps, size);
+        break;
+      case 'tank':
+        tanks.push(userName);
+        updateEmbed(reaction, userName, 'Tanques', tanks, size);
+        break;
+      case 'healer':
+        healers.push(userName);
+        updateEmbed(reaction, userName, 'Healers', healers, size);
+        break;
     }
 
-    const defer = i.deferUpdate();
+    ids.add(user.id);
 
-    const userName = i.guild.members.cache.get(i.user.id).displayName;
-    participants.push(userName);
-    ids.add(i.user.id);
-
-    i.message.embeds[0].fields.map(field => {
-      if (!field.name.startsWith('Participantes')) {
-        return field;
-      }
-      field.value = field.value === '-' ? userName : field.value + "\n" + userName;
-      field.name = `Participantes (${ids.size}/${size})`;
-    })
-
-    updatePromise = Promise.all([defer, updatePromise]).then(() => i.editReply({ embeds: i.message.embeds }));
+    updatePromise = updatePromise.then(() => msg.edit(reaction.message.embeds));
+    //updatePromise = Promise.all([defer, updatePromise]).then(() => i.editReply({ embeds: i.message.embeds }));
   });
 
   collector.on('end', async collected => {
@@ -180,7 +181,7 @@ const createNewEvent = async (interaction) => {
   });
 }
 
-const buildNewEventEmbed = (title, desc, date, author, size, avatar, participants = []) => {
+const buildNewEventEmbed = (title, desc, date, author, size, avatar, tanks = [], healers = [], dps = []) => {
   return new EmbedBuilder()
     .setColor(0x0099FF)
     .setTitle(title)
@@ -188,8 +189,20 @@ const buildNewEventEmbed = (title, desc, date, author, size, avatar, participant
     .addFields(
       { name: 'Fecha', value: capitalizeFirstLetter(date.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })) },
       { name: 'Hora', value: date.toLocaleTimeString('es-ES', { hour: 'numeric', minute: 'numeric' }) },
-      { name: `Participantes (${participants.length}/${size})`, value: `${participants.length > 0 ? participants.join('\n') : '-'}` }
+      { name: `Tanques (${tanks.length}/${size})`, value: `${tanks.length > 0 ? tanks.join('\n') : '-'}`, inline: true },
+      { name: `Healers (${healers.length}/${size})`, value: `${healers.length > 0 ? healers.join('\n') : '-'}`, inline: true },
+      { name: `DPS (${dps.length}/${size})`, value: `${dps.length > 0 ? dps.join('\n') : '-'}`, inline: true }
     )
     .setFooter({ text: `Creado por ${author}`, iconURL: avatar })
     .setTimestamp();
+}
+
+const updateEmbed = (reaction, userName, fieldName, list, size) => {
+  reaction.message.embeds[0].fields.map(field => {
+    if (!field.name.startsWith(fieldName)) {
+      return field;
+    }
+    field.value = field.value === '-' ? userName : field.value + "\n" + userName;
+    field.name = `${fieldName} (${list.length}/${size})`;
+  })
 }
