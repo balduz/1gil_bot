@@ -1,14 +1,9 @@
 const { EmbedBuilder } = require('discord.js');
+const { Roles } = require('../constants');
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
-
-const roles = {
-  tank: 1,
-  healer: 2,
-  dps: 3
-};
 
 class Composition {
   constructor(tanks, healers, dps) {
@@ -45,13 +40,13 @@ class PartyEmbed {
 
   add(role, user) {
     switch (role) {
-      case roles.tank:
+      case Roles.Tank:
         this.addTank(user);
         break;
-      case roles.healer:
+      case Roles.Healer:
         this.addHealer(user);
         break;
-      case roles.dps:
+      case Roles.Dps:
         this.addDPS(user);
         break;
     }
@@ -59,13 +54,13 @@ class PartyEmbed {
 
   remove(role, user) {
     switch (role) {
-      case roles.tank:
+      case Roles.Tank:
         this.removeTank(user);
         break;
-      case roles.healer:
+      case Roles.Healer:
         this.removeHealer(user);
         break;
-      case roles.dps:
+      case Roles.Dps:
         this.removeDPS(user);
         break;
     }
@@ -109,13 +104,13 @@ class PartyEmbed {
       embed = embed.setFooter({ text: `Creado por ${author}`, iconURL: avatar });
     }
     if (this.comp.tanks > 0) {
-      embed = embed.addFields({ name: listFieldName('<:tank:867880962864185345> Tanques', this.tanks, this.comp.tanks), value: listFieldValue(this.tanks), inline: true });
+      embed = embed.addFields({ name: listFieldName(Roles.Tank, this.tanks, this.comp.tanks), value: listFieldValue(this.tanks), inline: true });
     }
     if (this.comp.healers > 0) {
-      embed = embed.addFields({ name: listFieldName('<:healer:867880962955018240> Healers', this.healers, this.comp.healers), value: listFieldValue(this.healers), inline: true });
+      embed = embed.addFields({ name: listFieldName(Roles.Healer, this.healers, this.comp.healers), value: listFieldValue(this.healers), inline: true });
     }
     if (this.comp.dps > 0) {
-      embed = embed.addFields({ name: listFieldName('<:dps:867880962929852416> DPS', this.dps, this.comp.dps), value: listFieldValue(this.dps), inline: true });
+      embed = embed.addFields({ name: listFieldName(Roles.Dps, this.dps, this.comp.dps), value: listFieldValue(this.dps), inline: true });
     }
 
     return embed;
@@ -123,32 +118,32 @@ class PartyEmbed {
 
   updateEmbed(embed) {
     const updated = EmbedBuilder.from(embed);
-    this.updateField(updated, 'Tanques', this.tanks, this.comp.tanks);
-    this.updateField(updated, 'Healers', this.healers, this.comp.healers);
-    this.updateField(updated, 'DPS', this.dps, this.comp.dps);
+    this.updateField(updated, Roles.Tank, this.tanks, this.comp.tanks);
+    this.updateField(updated, Roles.Healer, this.healers, this.comp.healers);
+    this.updateField(updated, Roles.Dps, this.dps, this.comp.dps);
     return updated;
   }
 
-  updateField(embed, name, list, size) {
+  updateField(embed, role, list, size) {
     return embed.setFields(
       embed.data.fields.map(field => {
-        if (!field.name.startsWith(name)) {
+        if (!field.name.includes(role.embedName)) {
           return field;
         }
         field.value = listFieldValue(list);
-        field.name = `${name} (${list.length}/${size})`;
+        field.name = listFieldName(role, list, size);
         return field;
       })
     );
   }
 };
 
-listFieldName = (name, list, size) => {
-  return `${name} (${list.length}/${size})`;
+listFieldName = (role, list, size) => {
+  return `${role.emoji} ${role.embedName} (${list.length}/${size})`;
 }
 
 listFieldValue = (list) => {
   return list.length > 0 ? list.join('\n') : '-';
 }
 
-module.exports = { Composition, PartyEmbed, parseComposition, roles };
+module.exports = { Composition, PartyEmbed, parseComposition };

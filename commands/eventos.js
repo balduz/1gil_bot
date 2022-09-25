@@ -2,11 +2,9 @@ require('dotenv').config();
 
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
-const { parseComposition, PartyEmbed, roles } = require('../partyembed');
-
-function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
+const { Emojis } = require('../constants');
+const { roleFromName } = require('../model/role');
+const { parseComposition, PartyEmbed } = require('../model/partyembed');
 
 const TITLE_OPTION = 'titulo';
 const DESC_OPTION = 'descripción';
@@ -90,9 +88,9 @@ const createNewEvent = async (interaction) => {
   const embed = party.buildNewEmbed(title, desc, date, author, avatar);
 
   const msg = await interaction.reply({ embeds: [embed], fetchReply: true });
-  await msg.react('<:tank:867880962864185345>')
-    .then(() => msg.react('<:healer:867880962955018240>'))
-    .then(() => msg.react('<:dps:867880962929852416>'));
+  await msg.react(Emojis.TANK)
+    .then(() => msg.react(Emojis.HEALER))
+    .then(() => msg.react(Emojis.DPS));
 
   const msgId = msg.id;
   const client = interaction.client;
@@ -117,7 +115,7 @@ const createNewEvent = async (interaction) => {
     ids.add(user.id);
 
     const userName = guild.members.cache.get(user.id).displayName;
-    party.add(roles[reaction.emoji.name], userName);
+    party.add(roleFromName(reaction.emoji.name), userName);
 
     let embed = EmbedBuilder.from(reaction.message.embeds[0]);
     updatePromise = updatePromise.then(() => msg.edit({ embeds: [party.updateEmbed(embed)] }));
@@ -131,7 +129,7 @@ const createNewEvent = async (interaction) => {
     ids.delete(user.id);
 
     const userName = guild.members.cache.get(user.id).displayName;
-    party.remove(roles[reaction.emoji.name], userName);
+    party.remove(roleFromName(reaction.emoji.name), userName);
 
     let embed = EmbedBuilder.from(reaction.message.embeds[0]);
     updatePromise = updatePromise.then(() => msg.edit({ embeds: [party.updateEmbed(embed)] }));
